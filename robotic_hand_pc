@@ -106,78 +106,79 @@ with mp_hands.Hands(
     model_complexity=0,
     min_detection_confidence=0.5,
     min_tracking_confidence=0.5) as hands:
-  while cap.isOpened():
-    success, image = cap.read()
-    if not success:
-      print("Ignoring empty camera frame.")
-      continue
 
-    image.flags.writeable = False
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    results = hands.process(image)
+    while cap.isOpened():
+        success, image = cap.read()
+        if not success:
+            print("Ignoring empty camera frame.")
+            continue
 
-    image.flags.writeable = True
-    image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        image.flags.writeable = False
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        results = hands.process(image)
+
+        image.flags.writeable = True
+        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
     
-    finger_info = []
-    finger_count = []
-    total_fingers = 0
+        finger_info = []
+        finger_count = []
+        total_fingers = 0
 
-    if results.multi_hand_landmarks:
-        for hand_landmarks in results.multi_hand_landmarks:
-            mp_drawing.draw_landmarks(
-                image,
-                hand_landmarks,
-                mp_hands.HAND_CONNECTIONS,
-                mp_drawing_styles.get_default_hand_landmarks_style(),
-                mp_drawing_styles.get_default_hand_connections_style())
-            
-            finger_count = count_fingers_states(hand_landmarks)
-            for i in range (len(finger_count)):
-                finger_count[i] = int(finger_count[i])
+        if results.multi_hand_landmarks:
+            for hand_landmarks in results.multi_hand_landmarks:
+                mp_drawing.draw_landmarks(
+                    image,
+                    hand_landmarks,
+                    mp_hands.HAND_CONNECTIONS,
+                    mp_drawing_styles.get_default_hand_landmarks_style(),
+                    mp_drawing_styles.get_default_hand_connections_style())
+                
+                finger_count = count_fingers_states(hand_landmarks)
+                for i in range (len(finger_count)):
+                    finger_count[i] = int(finger_count[i])
 
-    # 在终端打印信息
-    # Print information in the terminal
-    #print(f"Hands: {len(finger_info)} | Finger counts: {finger_info} | Total fingers: {total_fingers}")
+        # 在终端打印信息
+        # Print information in the terminal
+        #print(f"Hands: {len(finger_info)} | Finger counts: {finger_info} | Total fingers: {total_fingers}")
     
-    data = ""
-    
-    # send thumb finger angel
-    if finger_count == []:
-        pass
-    else:
-        data = string_angels(finger_count)
+        data = ""
         
-    print("Finger angles:", finger_count)
-    '''
-    print(type(finger_count))
-    this = ""
-    if len(finger_count) == 0:
-        pass
-    else:
-        this = finger_count[2]
-    print("The type of this is", type(this))
-    '''
-    print("This is the data string:", data)
-    print(type(data))
+        # send thumb finger angel
+        if finger_count == []:
+            pass
+        else:
+            data = string_angels(finger_count)
+            
+        print("Finger angles:", finger_count)
+        '''
+        print(type(finger_count))
+        this = ""
+        if len(finger_count) == 0:
+            pass
+        else:
+            this = finger_count[2]
+        print("The type of this is", type(this))
+        '''
+        print("This is the data string:", data)
+        print(type(data))
+        
+        ser.write(data.encode('utf-8'))
+        
+        # Get image width
+        image_width = image.shape[1]
     
-    ser.write(data.encode('utf-8'))
+        # Create information panel
+        info_panel = create_info_panel(finger_info, image_width)
     
-    # Get image width
-    image_width = image.shape[1]
-
-    # Create information panel
-    info_panel = create_info_panel(finger_info, image_width)
-
-    # Flip the main image
-    image = cv2.flip(image, 1)
-
-    # Vertically stack the main image and information panel
-    display_image = np.vstack((image, info_panel))
-
-    cv2.imshow('MediaPipe Hands', display_image)
-    if cv2.waitKey(5) & 0xFF == ord('q'):
-      break
+        # Flip the main image
+        image = cv2.flip(image, 1)
+    
+        # Vertically stack the main image and information panel
+        display_image = np.vstack((image, info_panel))
+    
+        cv2.imshow('MediaPipe Hands', display_image)
+        if cv2.waitKey(5) & 0xFF == ord('q'):
+            break
 
 cap.release()
 ser.close()
