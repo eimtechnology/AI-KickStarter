@@ -91,85 +91,86 @@ with mp_hands.Hands(
     model_complexity=0,
     min_detection_confidence=0.5,
     min_tracking_confidence=0.5) as hands:
-  while cap.isOpened():
-    success, image = cap.read()
-    if not success:
-      print("Ignoring empty camera frame.")
-      continue
-
-    image.flags.writeable = False
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    results = hands.process(image)
-
-    image.flags.writeable = True
-    image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
     
-    finger_info = []
-    total_fingers = 0
-
-    finger_list = []
-
-    if results.multi_hand_landmarks:
-        for hand_landmarks in results.multi_hand_landmarks:
-            mp_drawing.draw_landmarks(
-                image,
-                hand_landmarks,
-                mp_hands.HAND_CONNECTIONS,
-                mp_drawing_styles.get_default_hand_landmarks_style(),
-                mp_drawing_styles.get_default_hand_connections_style())
+    while cap.isOpened():
+        success, image = cap.read()
+        if not success:
+            print("Ignoring empty camera frame.")
+            continue
+    
+        image.flags.writeable = False
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        results = hands.process(image)
+    
+        image.flags.writeable = True
+        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        
+        finger_info = []
+        total_fingers = 0
+    
+        finger_list = []
+    
+        if results.multi_hand_landmarks:
+            for hand_landmarks in results.multi_hand_landmarks:
+                mp_drawing.draw_landmarks(
+                    image,
+                    hand_landmarks,
+                    mp_hands.HAND_CONNECTIONS,
+                    mp_drawing_styles.get_default_hand_landmarks_style(),
+                    mp_drawing_styles.get_default_hand_connections_style())
+                
+                finger_count, straight_fingers = count_fingers(hand_landmarks)  # 获取伸直手指
+                # print(f"Straight fingers: {', '.join(straight_fingers)}")  # 打印伸直的手指
+    
+                finger_list.append(straight_fingers)
+                finger_info.append(finger_count)
+                total_fingers += finger_count
+    
+        # 在终端打印信息
+        # Print information in the terminal
+        print(f"Hands: {len(finger_info)} | Finger counts: {finger_info} | Total fingers: {total_fingers} | Finger list: {finger_list}")
+        
+        # if len(finger_info) != 0:
             
-            finger_count, straight_fingers = count_fingers(hand_landmarks)  # 获取伸直手指
-            # print(f"Straight fingers: {', '.join(straight_fingers)}")  # 打印伸直的手指
-
-            finger_list.append(straight_fingers)
-            finger_info.append(finger_count)
-            total_fingers += finger_count
-
-    # 在终端打印信息
-    # Print information in the terminal
-    print(f"Hands: {len(finger_info)} | Finger counts: {finger_info} | Total fingers: {total_fingers} | Finger list: {finger_list}")
+        #     if len(finger_info) > 0:
+        #         serial_connection.write(('1' + str(finger_info[0]) ).encode())        
+            
+        #     if len(finger_info) > 1:        
+        #         serial_connection.write(('2' + str(finger_info[1])).encode())
+        #     else:
+        #         serial_connection.write(('R').encode())
+        # else:
+        #     serial_connection.write(('L').encode())
     
-    # if len(finger_info) != 0:
+        if not len(finger_list) == 0:
+            serial_connection.write(('1' if "Thumb" in finger_list[0] else '0').encode())
+            serial_connection.write(('1' if "Index" in finger_list[0] else '0').encode())
+            serial_connection.write(('1' if "Middle" in finger_list[0] else '0').encode())
+            serial_connection.write(('1' if "Ring" in finger_list[0] else '0').encode())
+            serial_connection.write(('1' if "Pinky" in finger_list[0] else '0').encode())
+            serial_connection.write(("\n").encode())
+           
         
-    #     if len(finger_info) > 0:
-    #         serial_connection.write(('1' + str(finger_info[0]) ).encode())        
-        
-    #     if len(finger_info) > 1:        
-    #         serial_connection.write(('2' + str(finger_info[1])).encode())
-    #     else:
-    #         serial_connection.write(('R').encode())
-    # else:
-    #     serial_connection.write(('L').encode())
-
-    if not len(finger_list) == 0:
-        serial_connection.write(('1' if "Thumb" in finger_list[0] else '0').encode())
-        serial_connection.write(('1' if "Index" in finger_list[0] else '0').encode())
-        serial_connection.write(('1' if "Middle" in finger_list[0] else '0').encode())
-        serial_connection.write(('1' if "Ring" in finger_list[0] else '0').encode())
-        serial_connection.write(('1' if "Pinky" in finger_list[0] else '0').encode())
-        serial_connection.write(("\n").encode())
-       
     
-
-    # 获取图像宽度
-    # Get image width
-    image_width = image.shape[1]
-
-    # 创建信息面板
-    # Create information panel
-    info_panel = create_info_panel(finger_info, image_width)
-
-    # 翻转主图像
-    # Flip the main image
-    image = cv2.flip(image, 1)
-
-    # 将主图像和信息面板垂直堆叠
-    # Vertically stack the main image and information panel
-    display_image = np.vstack((image, info_panel))
-
-    cv2.imshow('MediaPipe Hands', display_image)
-    if cv2.waitKey(5) & 0xFF == ord('q'):
-      break
+        # 获取图像宽度
+        # Get image width
+        image_width = image.shape[1]
+    
+        # 创建信息面板
+        # Create information panel
+        info_panel = create_info_panel(finger_info, image_width)
+    
+        # 翻转主图像
+        # Flip the main image
+        image = cv2.flip(image, 1)
+    
+        # 将主图像和信息面板垂直堆叠
+        # Vertically stack the main image and information panel
+        display_image = np.vstack((image, info_panel))
+    
+        cv2.imshow('MediaPipe Hands', display_image)
+        if cv2.waitKey(5) & 0xFF == ord('q'):
+            break
 
 cap.release()
 serial_connection.close()
