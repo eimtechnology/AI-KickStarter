@@ -13,7 +13,7 @@ port = "COM4"  # Adjust the port to match your setup
 baudrate = 115200
 # serial connection to talk to pico
 
-ser = serial.Serial('COM4', 115200, timeout=1)
+serial_connection = serial.Serial('COM4', 115200, timeout=1)
 
 def calculate_distance(point1, point2):
     "Calculate the Euclidean distance between two points"
