@@ -15,7 +15,9 @@ baudrate = 115200
 
 ser = serial.Serial('COM4', 115200, timeout=1)
 
-#serial_connection = serial.Serial(port, baudrate)
+def calculate_distance(point1, point2):
+    "Calculate the Euclidean distance between two points"
+    return math.sqrt((point1.x - point2.x) ** 2 + (point1.y - point2.y) ** 2)
 
 def calculate_angle(a, b, c):
     # Calculate the angle a-b-c, where b is the vertex
@@ -30,11 +32,30 @@ def calculate_angle(a, b, c):
     angle = math.degrees(math.acos(max(-1.0, min(1.0, cos_angle))))  # 确保cos_angle在[-1, 1]范围内 / Ensure cos_angle is within [-1, 1]
     return angle
 
+def is_finger_straight(landmarks, finger_tip_index, finger_mcp_index, wrist_index=0):
+    """判断手指是否伸直（基于距离）"""
+    """Determine if a finger is straight (based on distance)"""
+    wrist = landmarks[wrist_index]
+    finger_tip = landmarks[finger_tip_index]
+    finger_mcp = landmarks[finger_mcp_index]
+
+    tip_to_wrist_distance = calculate_distance(finger_tip, wrist)
+    mcp_to_wrist_distance = calculate_distance(finger_mcp, wrist)
+
+    return tip_to_wrist_distance > mcp_to_wrist_distance
+
+def is_finger_bent(landmarks, mcp_index, pip_index, dip_index):
+    """判断手指是否弯曲（基于角度）"""
+    """Determine if a finger is bent (based on angle)"""
+    angle = calculate_angle(landmarks[mcp_index], landmarks[pip_index], landmarks[dip_index])
+    return angle < 160  # 小于160度认为手指弯曲 / Consider the finger bent if angle is less than 160 degrees
+
+# Determine finger angle
 def finger_angel(landmarks, mcp_index, pip_index, dip_index):
-    # Determine if a finger is bent (based on angle)
     angle = calculate_angle(landmarks[mcp_index], landmarks[pip_index], landmarks[dip_index])
     return angle
 
+# Count each joint angel
 def count_fingers_states(hand_landmarks):
     landmarks = hand_landmarks.landmark
     finger_states = [
@@ -45,6 +66,19 @@ def count_fingers_states(hand_landmarks):
         finger_angel(landmarks, 0, 17, 18) # 小指 / Pinky
     ]
     return finger_states
+
+def count_fingers(hand_landmarks):
+    landmarks = hand_landmarks.landmark
+    finger_states = [
+        not is_finger_bent(landmarks, 1, 2, 3) and is_finger_straight(landmarks, 4, 1),  # 拇指 / Thumb
+        not is_finger_bent(landmarks, 5, 6, 7) and is_finger_straight(landmarks, 8, 5),  # 食指 / Index finger
+        not is_finger_bent(landmarks, 9, 10, 11) and is_finger_straight(landmarks, 12, 9),  # 中指 / Middle finger
+        not is_finger_bent(landmarks, 13, 14, 15) and is_finger_straight(landmarks, 16, 13),  # 无名指 / Ring finger
+        not is_finger_bent(landmarks, 17, 18, 19) and is_finger_straight(landmarks, 20, 17)  # 小指 / Pinky
+    ]
+    finger_names = ["Thumb", "Index", "Middle", "Ring", "Pinky"]
+    straight_fingers = [finger_names[i] for i, state in enumerate(finger_states) if state]
+    return sum(finger_states), straight_fingers
 
 # Function to send a list of integers
 def send_integers(int_list):
@@ -59,27 +93,13 @@ def send_integers(int_list):
         
     return data
 
+# Pad to length 3
 def string_data(string):
-    holder = str(string)
-    if len(holder) < 3:
-        holder = "0"+holder
-        if len(holder) < 3:
-            holder = "0"+holder
-            if len(holder) < 3:
-                holder = "0"+holder
-            else:
-                pass
-        else:
-            pass
-    else:
-        pass
-    return holder
+    return f"{int(string):03d}"
 
+# Merge all angels to a string
 def string_angels(data):
-    datalist = ""
-    for i in range(len(data)):
-        datalist = datalist + string_data(data[i])
-    return datalist
+    return ''.join(string_data(d) for d in data)
 
 def create_info_panel(finger_info, image_width, panel_height=50):
     panel = np.zeros((panel_height, image_width, 3), dtype=np.uint8)
@@ -88,12 +108,10 @@ def create_info_panel(finger_info, image_width, panel_height=50):
     info_text = f"Hands: {len(finger_info)} | "
     for i, count in enumerate(finger_info):
         info_text += f"Hand {i+1}: {count} fingers | "
-    
 
     # If no hands are detected, display appropriate information
     if not finger_info:
-        pass
-    
+        info_text = "No hands detected"
 
     # Draw text on the panel
     cv2.putText(panel, info_text.strip(), (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
@@ -121,8 +139,11 @@ with mp_hands.Hands(
         image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
     
         finger_info = []
-        finger_count = []
         total_fingers = 0
+        finger_list = []
+
+        finger_count = []
+        finger_angels = []
 
         if results.multi_hand_landmarks:
             for hand_landmarks in results.multi_hand_landmarks:
@@ -133,36 +154,33 @@ with mp_hands.Hands(
                     mp_drawing_styles.get_default_hand_landmarks_style(),
                     mp_drawing_styles.get_default_hand_connections_style())
                 
-                finger_count = count_fingers_states(hand_landmarks)
-                for i in range (len(finger_count)):
-                    finger_count[i] = int(finger_count[i])
+                finger_count, straight_fingers = count_fingers(hand_landmarks)
 
-        # 在终端打印信息
+                finger_list.append(straight_fingers)
+                finger_info.append(finger_count)
+                total_fingers += finger_count
+
+                # Redcord joint angels and convert to integers
+                finger_angels = count_fingers_states(hand_landmarks)
+                for i in range (len( finger_angels)):
+                     finger_angels[i] = int(finger_angels[i])
+
         # Print information in the terminal
-        #print(f"Hands: {len(finger_info)} | Finger counts: {finger_info} | Total fingers: {total_fingers}")
+        print(f"Hands: {len(finger_info)} | Finger counts: {finger_info} | Total fingers: {total_fingers}")
     
         data = ""
         
         # send thumb finger angel
-        if finger_count == []:
+        if finger_angels == []:
             pass
         else:
-            data = string_angels(finger_count)
+            data = string_angels(finger_angels)
             
-        print("Finger angles:", finger_count)
-        '''
-        print(type(finger_count))
-        this = ""
-        if len(finger_count) == 0:
-            pass
-        else:
-            this = finger_count[2]
-        print("The type of this is", type(this))
-        '''
-        print("This is the data string:", data)
-        print(type(data))
+        print("Finger angles:", finger_angels)
+        # print("This is the data string:", data))
         
-        ser.write(data.encode('utf-8'))
+        # Encode data
+        serial_connection.write(data.encode('utf-8'))
         
         # Get image width
         image_width = image.shape[1]
@@ -181,5 +199,5 @@ with mp_hands.Hands(
             break
 
 cap.release()
-ser.close()
+serial_connection.close()
 cv2.destroyAllWindows()
