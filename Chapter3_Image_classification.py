@@ -1,3 +1,10 @@
+'''
+Don't forget to install cv2-python via pip.
+Keras will be installed automatically when installing cv2-python.
+
+The training set could be downloaded from this link:
+https://eimtechnology.blob.core.windows.net/dataset/dataset.zip
+'''
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from keras.models import Sequential
 from keras.layers import Conv2D, MaxPool2D, Flatten, Dense, Dropout
