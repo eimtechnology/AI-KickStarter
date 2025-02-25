@@ -30,11 +30,10 @@ def calculate_angle(a, b, c):
     magnitude_bc = math.sqrt(bc[0] ** 2 + bc[1] ** 2)
     
     cos_angle = dot_product / (magnitude_ab * magnitude_bc)
-    angle = math.degrees(math.acos(max(-1.0, min(1.0, cos_angle))))  # 确保cos_angle在[-1, 1]范围内 / Ensure cos_angle is within [-1, 1]
+    angle = math.degrees(math.acos(max(-1.0, min(1.0, cos_angle))))  # Ensure cos_angle is within [-1, 1]
     return angle
 
 def is_finger_straight(landmarks, finger_tip_index, finger_mcp_index, wrist_index=0):
-    """判断手指是否伸直（基于距离）"""
     """Determine if a finger is straight (based on distance)"""
     wrist = landmarks[wrist_index]
     finger_tip = landmarks[finger_tip_index]
@@ -46,7 +45,6 @@ def is_finger_straight(landmarks, finger_tip_index, finger_mcp_index, wrist_inde
     return tip_to_wrist_distance > mcp_to_wrist_distance
 
 def is_finger_bent(landmarks, mcp_index, pip_index, dip_index):
-    """判断手指是否弯曲（基于角度）"""
     """Determine if a finger is bent (based on angle)"""
     angle = calculate_angle(landmarks[mcp_index], landmarks[pip_index], landmarks[dip_index])
     return angle < 160  # 小于160度认为手指弯曲 / Consider the finger bent if angle is less than 160 degrees
@@ -54,37 +52,33 @@ def is_finger_bent(landmarks, mcp_index, pip_index, dip_index):
 def count_fingers(hand_landmarks):
     landmarks = hand_landmarks.landmark
     finger_states = [
-        not is_finger_bent(landmarks, 1, 2, 3) and is_finger_straight(landmarks, 4, 1),  # 拇指 / Thumb
-        not is_finger_bent(landmarks, 5, 6, 7) and is_finger_straight(landmarks, 8, 5),  # 食指 / Index finger
-        not is_finger_bent(landmarks, 9, 10, 11) and is_finger_straight(landmarks, 12, 9),  # 中指 / Middle finger
-        not is_finger_bent(landmarks, 13, 14, 15) and is_finger_straight(landmarks, 16, 13),  # 无名指 / Ring finger
-        not is_finger_bent(landmarks, 17, 18, 19) and is_finger_straight(landmarks, 20, 17)  # 小指 / Pinky
+        not is_finger_bent(landmarks, 1, 2, 3) and is_finger_straight(landmarks, 4, 1),  # Thumb
+        not is_finger_bent(landmarks, 5, 6, 7) and is_finger_straight(landmarks, 8, 5),  # Index finger
+        not is_finger_bent(landmarks, 9, 10, 11) and is_finger_straight(landmarks, 12, 9),  # Middle finger
+        not is_finger_bent(landmarks, 13, 14, 15) and is_finger_straight(landmarks, 16, 13),  # Ring finger
+        not is_finger_bent(landmarks, 17, 18, 19) and is_finger_straight(landmarks, 20, 17)  # Pinky
     ]
     finger_names = ["Thumb", "Index", "Middle", "Ring", "Pinky"]
     straight_fingers = [finger_names[i] for i, state in enumerate(finger_states) if state]
-    return sum(finger_states), straight_fingers  # 返回手指状态
+    return sum(finger_states), straight_fingers
 
 def create_info_panel(finger_info, image_width, panel_height=50):
     panel = np.zeros((panel_height, image_width, 3), dtype=np.uint8)
-    
-    # 创建一个字符串来存储手的数量和每只手的手指数量
+
     # Create a string to store the number of hands and the number of fingers for each hand
     info_text = f"Hands: {len(finger_info)} | "
     for i, count in enumerate(finger_info):
         info_text += f"Hand {i+1}: {count} fingers | "
     
-    # 如果没有检测到手，显示相应信息
     # If no hands are detected, display appropriate information
     if not finger_info:
         info_text = "No hands detected"
     
-    # 在面板上绘制文本
     # Draw text on the panel
     cv2.putText(panel, info_text.strip(), (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
     
     return panel
 
-# 摄像头输入部分
 # Camera input section
 cap = cv2.VideoCapture(0)
 with mp_hands.Hands(
@@ -119,28 +113,15 @@ with mp_hands.Hands(
                     mp_drawing_styles.get_default_hand_landmarks_style(),
                     mp_drawing_styles.get_default_hand_connections_style())
                 
-                finger_count, straight_fingers = count_fingers(hand_landmarks)  # 获取伸直手指
-                # print(f"Straight fingers: {', '.join(straight_fingers)}")  # 打印伸直的手指
+                finger_count, straight_fingers = count_fingers(hand_landmarks)  
     
                 finger_list.append(straight_fingers)
                 finger_info.append(finger_count)
                 total_fingers += finger_count
     
-        # 在终端打印信息
+
         # Print information in the terminal
         print(f"Hands: {len(finger_info)} | Finger counts: {finger_info} | Total fingers: {total_fingers} | Finger list: {finger_list}")
-        
-        # if len(finger_info) != 0:
-            
-        #     if len(finger_info) > 0:
-        #         serial_connection.write(('1' + str(finger_info[0]) ).encode())        
-            
-        #     if len(finger_info) > 1:        
-        #         serial_connection.write(('2' + str(finger_info[1])).encode())
-        #     else:
-        #         serial_connection.write(('R').encode())
-        # else:
-        #     serial_connection.write(('L').encode())
     
         if not len(finger_list) == 0:
             serial_connection.write(('1' if "Thumb" in finger_list[0] else '0').encode())
@@ -150,21 +131,15 @@ with mp_hands.Hands(
             serial_connection.write(('1' if "Pinky" in finger_list[0] else '0').encode())
             serial_connection.write(("\n").encode())
            
-        
-    
-        # 获取图像宽度
         # Get image width
         image_width = image.shape[1]
     
-        # 创建信息面板
         # Create information panel
         info_panel = create_info_panel(finger_info, image_width)
     
-        # 翻转主图像
         # Flip the main image
         image = cv2.flip(image, 1)
     
-        # 将主图像和信息面板垂直堆叠
         # Vertically stack the main image and information panel
         display_image = np.vstack((image, info_panel))
     
@@ -172,6 +147,7 @@ with mp_hands.Hands(
         if cv2.waitKey(5) & 0xFF == ord('q'):
             break
 
+# close the windows and stop the program
 cap.release()
 serial_connection.close()
 cv2.destroyAllWindows()
