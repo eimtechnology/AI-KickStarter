@@ -1,19 +1,19 @@
 import os
 import pickle
 
-# 加载已注册的员工信息
+# load registered personage
 def load_registered_faces(file_path='registered_faces.pkl'):
     if os.path.exists(file_path):
         with open(file_path, 'rb') as f:
             return pickle.load(f)
     return {}
 
-# 保存已注册的员工信息
+# save registered personage
 def save_registered_faces(face_data, file_path='registered_faces.pkl'):
     with open(file_path, 'wb') as f:
         pickle.dump(face_data, f)
 
-# 显示已注册的员工列表
+# list saved registered personage
 def display_registered_employees(registered_faces):
     if registered_faces:
         print("Registered Employees:")
@@ -22,7 +22,7 @@ def display_registered_employees(registered_faces):
     else:
         print("No registered employees.")
 
-# 删除指定的员工
+# delete certain personage
 def delete_employee(registered_faces):
     display_registered_employees(registered_faces)
     employee_name = input("Enter the name of the employee to delete: ")
@@ -33,7 +33,7 @@ def delete_employee(registered_faces):
     else:
         print(f"Employee {employee_name} not found.")
 
-# 编辑指定员工的名称
+# edit peronage information
 def edit_employee(registered_faces):
     display_registered_employees(registered_faces)
     old_name = input("Enter the name of the employee to edit: ")
@@ -45,7 +45,7 @@ def edit_employee(registered_faces):
     else:
         print(f"Employee {old_name} not found.")
 
-# 主程序
+# main loop
 if __name__ == "__main__":
     registered_faces = load_registered_faces()
     while True:
