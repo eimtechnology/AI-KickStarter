@@ -29,11 +29,10 @@ def calculate_angle(a, b, c):
     magnitude_bc = math.sqrt(bc[0] ** 2 + bc[1] ** 2)
     
     cos_angle = dot_product / (magnitude_ab * magnitude_bc)
-    angle = math.degrees(math.acos(max(-1.0, min(1.0, cos_angle))))  # 确保cos_angle在[-1, 1]范围内 / Ensure cos_angle is within [-1, 1]
+    angle = math.degrees(math.acos(max(-1.0, min(1.0, cos_angle))))  #Ensure cos_angle is within [-1, 1]
     return angle
 
 def is_finger_straight(landmarks, finger_tip_index, finger_mcp_index, wrist_index=0):
-    """判断手指是否伸直（基于距离）"""
     """Determine if a finger is straight (based on distance)"""
     wrist = landmarks[wrist_index]
     finger_tip = landmarks[finger_tip_index]
@@ -45,7 +44,6 @@ def is_finger_straight(landmarks, finger_tip_index, finger_mcp_index, wrist_inde
     return tip_to_wrist_distance > mcp_to_wrist_distance
 
 def is_finger_bent(landmarks, mcp_index, pip_index, dip_index):
-    """判断手指是否弯曲（基于角度）"""
     """Determine if a finger is bent (based on angle)"""
     angle = calculate_angle(landmarks[mcp_index], landmarks[pip_index], landmarks[dip_index])
     return angle < 160  # 小于160度认为手指弯曲 / Consider the finger bent if angle is less than 160 degrees
@@ -59,22 +57,22 @@ def finger_angel(landmarks, mcp_index, pip_index, dip_index):
 def count_fingers_states(hand_landmarks):
     landmarks = hand_landmarks.landmark
     finger_states = [
-        finger_angel(landmarks, 1, 2, 3),  # 拇指 / Thumb
-        finger_angel(landmarks, 0, 5, 6),  # 食指 / Index finger, palm|first joint
-        finger_angel(landmarks, 0, 9, 10),  # 中指 / Middle finger
-        finger_angel(landmarks, 0, 13, 14),  # 无名指 / Ring finger
-        finger_angel(landmarks, 0, 17, 18) # 小指 / Pinky
+        finger_angel(landmarks, 1, 2, 3),  # Thumb
+        finger_angel(landmarks, 0, 5, 6),  # Index finger, palm|first joint
+        finger_angel(landmarks, 0, 9, 10),  # Middle finger
+        finger_angel(landmarks, 0, 13, 14),  # Ring finger
+        finger_angel(landmarks, 0, 17, 18) # Pinky
     ]
     return finger_states
 
 def count_fingers(hand_landmarks):
     landmarks = hand_landmarks.landmark
     finger_states = [
-        not is_finger_bent(landmarks, 1, 2, 3) and is_finger_straight(landmarks, 4, 1),  # 拇指 / Thumb
-        not is_finger_bent(landmarks, 5, 6, 7) and is_finger_straight(landmarks, 8, 5),  # 食指 / Index finger
-        not is_finger_bent(landmarks, 9, 10, 11) and is_finger_straight(landmarks, 12, 9),  # 中指 / Middle finger
-        not is_finger_bent(landmarks, 13, 14, 15) and is_finger_straight(landmarks, 16, 13),  # 无名指 / Ring finger
-        not is_finger_bent(landmarks, 17, 18, 19) and is_finger_straight(landmarks, 20, 17)  # 小指 / Pinky
+        not is_finger_bent(landmarks, 1, 2, 3) and is_finger_straight(landmarks, 4, 1),  # Thumb
+        not is_finger_bent(landmarks, 5, 6, 7) and is_finger_straight(landmarks, 8, 5),  # Index finger
+        not is_finger_bent(landmarks, 9, 10, 11) and is_finger_straight(landmarks, 12, 9),  # Middle finger
+        not is_finger_bent(landmarks, 13, 14, 15) and is_finger_straight(landmarks, 16, 13),  # Ring finger
+        not is_finger_bent(landmarks, 17, 18, 19) and is_finger_straight(landmarks, 20, 17)  # Pinky
     ]
     finger_names = ["Thumb", "Index", "Middle", "Ring", "Pinky"]
     straight_fingers = [finger_names[i] for i, state in enumerate(finger_states) if state]
