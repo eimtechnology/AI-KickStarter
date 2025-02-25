@@ -11,6 +11,7 @@ mp_hands = mp.solutions.hands
 
 port = ""  # Adjust the port to match your setup
 baudrate = 115200
+
 # serial connection to talk to pico
 serial_connection = serial.Serial(port, baudrate)
 def calculate_distance(point1, point2):
