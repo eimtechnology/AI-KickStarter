@@ -158,7 +158,7 @@ with mp_hands.Hands(
                 finger_info.append(finger_count)
                 total_fingers += finger_count
 
-                # Redcord joint angels and convert to integers
+                # Record joint angels and convert to integers
                 finger_angels = count_fingers_states(hand_landmarks)
                 for i in range (len( finger_angels)):
                      finger_angels[i] = int(finger_angels[i])
