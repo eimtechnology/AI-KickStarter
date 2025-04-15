@@ -7,16 +7,7 @@ import uselect
 import math 
 import time
 
-
-def flush_cache():
-    # Zero out the cache tag memory
-    for i in range(0x10000):
-        asm("mov r0, #0")
-        asm("str r0, [r1, #i]")
-
-# Call the function to clear the cache flush_cache()
-
-# this is for servo controlling
+# this part is for servo controlling
 gate_servo = Pin(18)
 gate_pwm = PWM(gate_servo)
 gate_pwm.freq(50)
@@ -27,19 +18,22 @@ gate_condition = False
 # false for stopped, true for working
 buzzer_condition = False
 
-#names = ["Ming","Nanoha","Setsuna"]
+# empty place holder
 names = ["","",""]
 
+#led wiring 
 green_led = Pin(17, Pin.OUT)
 red_led = Pin(27, Pin.OUT)
 
+#buzzer wiring 
 buzzer = Pin(19)
 buzzer_pwm = PWM(buzzer)
 buzzer_pwm.freq(400)
+
 #[0] for recognized, [1] for unrecognized
 condition = [0,0]
 
-# Set up Screen Pins 
+# Set up st7789 display Pins 
 WIDTH, HEIGHT = 240, 240
 
 BACKLIGHT_PIN = 9
@@ -53,7 +47,7 @@ DC_PIN = 14
 CS_PIN = 15
 SPI_NUM = 0
 
-# Connect Pins and Screen
+# initialize spi communication
 spi = SPI(SPI_NUM, baudrate=31250000, sck=Pin(SCK_PIN), mosi=Pin(MOSI_PIN))
 tft = st7789.ST7789(
     spi, WIDTH, HEIGHT,
@@ -64,7 +58,7 @@ tft = st7789.ST7789(
     rotation=0,
 )
 
-# test 
+# testing text display on the st7789
 #t = "Hello World"
 #tft.text(font,str(t),35,108,st7789.color565(255,0,0))
 
