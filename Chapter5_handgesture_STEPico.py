@@ -36,7 +36,8 @@ tft.fill(COLOUR_BLACK)
 
 '''
 # this part is for testing
-fb.fill_rect(50, 50, 100, 100, HAND_COLOUR)
+
+buffer= fb.fill_rect(50, 50, 100, 100, HAND_COLOUR)
 
 # Display the contents of FrameBuffer to the screen
 tft.blit_buffer(buffer, 0, 0, width, height)
