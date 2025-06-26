@@ -1,8 +1,6 @@
 from machine import Pin, SPI, ADC
 import math, framebuf
 import st7789
-import vga1_8x8 as font 
-
 from sys import stdin
 import uselect
 
@@ -25,14 +23,13 @@ tft = st7789.ST7789(
     dc=Pin(DC_PIN, Pin.OUT),
     backlight=Pin(BACKLIGHT_PIN, Pin.OUT),
     rotation=0,
-)
-tft.init()    
+)   
 
 hand = lambda: framebuf.FrameBuffer(
     bytearray(WIDTH*HEIGHT*2), WIDTH, HEIGHT,framebuf.RGB565
 )
 
-tft.fill(COLOUR_BLACK)
+tft.fill(st7789.BLACK)
 
 '''
 # this part is for testing
@@ -95,16 +92,15 @@ while True:
             pass
         
         new_hand.fill(st7789.color565(0,0,0))
-        new_hand.fill_rect(*coords["palm"],peach2)
+        new_hand.fill_rect(*coords["palm"],st7789.RED)
 
-        new_hand.fill_rect(*coords["thumb"], peach2) if m == 1 else new_hand.rect(*coords["thumb"], peach2)
-        new_hand.fill_rect(*coords["index"], peach2) if i == 1 else new_hand.rect(*coords["index"], peach2)
-        new_hand.fill_rect(*coords["middle"], peach2) if j == 1 else new_hand.rect(*coords["middle"], peach2)
-        new_hand.fill_rect(*coords["ring"], peach2) if k == 1 else new_hand.rect(*coords["ring"], peach2)
-        new_hand.fill_rect(*coords["pinky"], peach2) if l == 1 else new_hand.rect(*coords["pinky"], peach2)
+        new_hand.fill_rect(*coords["thumb"], st7789.RED) if m == 1 else new_hand.rect(*coords["thumb"], st7789.RED)
+        new_hand.fill_rect(*coords["index"], st7789.RED) if i == 1 else new_hand.rect(*coords["index"], st7789.RED)
+        new_hand.fill_rect(*coords["middle"], st7789.RED) if j == 1 else new_hand.rect(*coords["middle"], st7789.RED)
+        new_hand.fill_rect(*coords["ring"], st7789.RED) if k == 1 else new_hand.rect(*coords["ring"], st7789.RED)
+        new_hand.fill_rect(*coords["pinky"], st7789.RED) if l == 1 else new_hand.rect(*coords["pinky"], st7789.RED)
         
         tft.blit_buffer(new_hand, 0, 0, 240, 240)
     if len(s) > 15:
         s = s[-10:]
-        
 
