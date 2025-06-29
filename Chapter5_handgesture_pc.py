@@ -10,12 +10,36 @@ mp_drawing = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles
 mp_hands = mp.solutions.hands
 
-# port = "/dev/cu.usbmodem1101"  # Adjust the port to match your setup
-port = list_ports.comports()[0].device
+# Find the Pico's port
+pico_port = None
+for port in list_ports.comports():
+    if "Board in FS mode" in port.description:
+        pico_port = port.device
+        break
 
-baudrate = 115200
-#serial connection to talk to pico
-serial_connection = serial.Serial(port, baudrate)
+if not pico_port:
+    print("Available ports:")
+    for port in list_ports.comports():
+        print(f"- {port.device}: {port.description}")
+    raise Exception("Pico not found! Please check the connection.")
+
+print(f"Using Pico port: {pico_port}")
+
+# Configure UART connection
+serial_connection = serial.Serial(
+    port=pico_port,
+    baudrate=115200,  # Standard baudrate for Pico
+    bytesize=serial.EIGHTBITS,
+    parity=serial.PARITY_NONE,
+    stopbits=serial.STOPBITS_ONE,
+    timeout=1  # Read timeout in seconds
+)
+
+# Ensure the connection is fresh
+if serial_connection.is_open:
+    serial_connection.close()
+serial_connection.open()
+
 def calculate_distance(point1, point2):
     "Calculate the Euclidean distance between two points"
     return math.sqrt((point1.x - point2.x) ** 2 + (point1.y - point2.y) ** 2)
@@ -123,14 +147,27 @@ with mp_hands.Hands(
         # Print information in the terminal
         print(f"Hands: {len(finger_info)} | Finger counts: {finger_info} | Total fingers: {total_fingers} | Finger list: {finger_list}")
     
+        # Send data over UART
         if not len(finger_list) == 0:
-            serial_connection.write(('1' if "Thumb" in finger_list[0] else '0').encode())
-            serial_connection.write(('1' if "Index" in finger_list[0] else '0').encode())
-            serial_connection.write(('1' if "Middle" in finger_list[0] else '0').encode())
-            serial_connection.write(('1' if "Ring" in finger_list[0] else '0').encode())
-            serial_connection.write(('1' if "Pinky" in finger_list[0] else '0').encode())
-            serial_connection.write(("\n").encode())
-           
+            # Combine all digits into a single string and send at once
+            finger_data = (
+                ('1' if "Thumb" in finger_list[0] else '0') +
+                ('1' if "Index" in finger_list[0] else '0') +
+                ('1' if "Middle" in finger_list[0] else '0') +
+                ('1' if "Ring" in finger_list[0] else '0') +
+                ('1' if "Pinky" in finger_list[0] else '0') +
+                '\n'
+            )
+            serial_connection.write(finger_data.encode())
+            print(f"Sent: {finger_data.strip()}")
+        else:
+            # Send zeros when no hand is detected
+            serial_connection.write(b"00000\n")
+            print("Sent: 00000")
+        
+        # Add a small delay to ensure stable transmission
+        time.sleep(0.05)
+    
         # Get image width
         image_width = image.shape[1]
     
@@ -150,4 +187,4 @@ with mp_hands.Hands(
 # close the windows and stop the program
 cap.release()
 serial_connection.close()
-cv2.destroyAllWindows()
+cv2.destroyAllWindows() 
