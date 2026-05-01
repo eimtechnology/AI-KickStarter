@@ -4,6 +4,7 @@ import math
 import numpy as np
 import time
 import serial
+# search and install pyserial in Thonny package manager
 
 mp_drawing = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles
