@@ -1,5 +1,7 @@
 '''
-Don't forget to install cv2-python via pip.
+tensorflow version 2.18.1
+
+Don't forget to install opencv-python
 Keras will be installed automatically when installing cv2-python.
 
 The training set could be downloaded from this link:
