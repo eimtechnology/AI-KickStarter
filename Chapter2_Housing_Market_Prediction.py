@@ -5,8 +5,8 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
 
 # Stpe1
-# Load the dataset
-data = pd.read_csv('vancouver_housing_price.csv')
+# Load the dataset，be aware for the file name
+data = pd.read_csv('Chapter2_vancouver_housing_price.csv')
 
 # Display the first few rows of the dataset
 # print(data.head())
@@ -109,9 +109,9 @@ print("The mean squared error is",mean_squared_error_multi,"and the r2 score is"
 
 #make a prediction for a new data point
 X_test = [55000,5,5,30000,200]
-X_test = np.array(X_test).reshape(1,-1)
-print(X_test)
+X_test_df = pd.DataFrame([X_test], columns=X_multi.columns) 
+print(X_test_df)
 
 #make a prediction for a new data point
-y_test_predict = LR_multi.predict(X_test)
+y_test_predict = LR_multi.predict(X_test_df)
 print(y_test_predict)
